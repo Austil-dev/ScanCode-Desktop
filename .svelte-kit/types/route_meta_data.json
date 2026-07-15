@@ -1,0 +1,22 @@
+{
+	"/": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/info": [
+		"src/routes/+layout.ts"
+	],
+	"/stats": [
+		"src/routes/+layout.ts",
+		"src/routes/+layout.ts"
+	],
+	"/stats/donnees": [
+		"src/routes/+layout.ts"
+	],
+	"/stats/infos": [
+		"src/routes/+layout.ts"
+	],
+	"/stats/structure": [
+		"src/routes/+layout.ts"
+	]
+}
