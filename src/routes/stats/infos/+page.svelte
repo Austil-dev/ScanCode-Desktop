@@ -2,6 +2,7 @@
   import { invoke } from "@tauri-apps/api/core";
   import { fade } from "svelte/transition";
 
+  // Interface pour les informations du projet. Copie les informations de la structure ProjectInfo du backend vers le frontend.
   interface ProjectInfo {
     path: string;
     size: number;
@@ -10,10 +11,17 @@
     resource_files_count: number;
     executable_count: number;
     total_files_count: number;
+    code_files_percentage: number;
+    largest_file_path: string;
+    largest_file_size: number;
+    dominant_language: string;
+    dominant_extension: string;
+    average_depth: number;
     max_depth: number;
     detected_editor: string;
   }
 
+  // Interface pour les détails de complexité du projet. Copie les informations de la structure ProjectComplexity du backend vers le frontend.
   interface ProjectComplexity {
     level: string;
     notation: string;
@@ -25,11 +33,25 @@
     files_analyzed: number;
   }
 
+  // Interface pour l'historique Git du projet. Copie les informations de la structure GitHistory du backend vers le frontend.
+  interface GitHistory {
+    total_commits: number;
+    total_files_changed: number;
+    total_insertions: number;
+    total_deletions: number;
+    last_commit_date: string;
+  }
+
+  // États pour stocker les informations du projet, la complexité et l'historique Git.
   let projectPath = $state("");
   let projectInfo = $state<ProjectInfo | null>(null);
   let complexityDetails = $state<ProjectComplexity | null>(null);
+  let gitHistory = $state<GitHistory | null>(null);
+  let avgFileSize = $state<number | null>(null);
   let showComplexityDetails = $state(false);
+  let showCommitDetails = $state(false);
 
+  // $effect est utilisé pour réagir aux changements de l'état projectPath et charger les informations du projet et la complexité.
   $effect(() => {
     const params = new URLSearchParams(window.location.search);
     projectPath = params.get("path") || "";
@@ -37,9 +59,27 @@
     if (projectPath) {
       loadProjectInfo();
       loadComplexityDetails();
+      loadGitHistory();
+      loadAvgFileSize();
     }
   });
 
+  // Charge l'historique Git du projet depuis le backend.
+  async function loadGitHistory() {
+    if (!projectPath) {
+      gitHistory = null;
+      return;
+    }
+
+    try {
+      gitHistory = await invoke<GitHistory | null>("get_git_project_history", { path: projectPath });
+    } catch (error) {
+      console.error("Erreur lors du chargement de l'historique Git:", error);
+      gitHistory = null;
+    }
+  }
+
+  // Charge les informations du projet depuis le backend en utilisant l'invocation Tauri.
   async function loadProjectInfo() {
     if (!projectPath) {
       projectInfo = null;
@@ -54,6 +94,7 @@
     }
   }
 
+  // Charge les détails de complexité du projet depuis le backend en utilisant l'invocation Tauri.
   async function loadComplexityDetails() {
     if (!projectPath) {
       complexityDetails = null;
@@ -65,6 +106,20 @@
     } catch (error) {
       console.error("Erreur lors du chargement de la complexité:", error);
       complexityDetails = null;
+    }
+  }
+
+  async function loadAvgFileSize() {
+    if (!projectPath) {
+      avgFileSize = null;
+      return;
+    }
+
+    try {
+      avgFileSize = await invoke<number>("calculate_avg_file_size", { path: projectPath });
+    } catch (error) {
+      console.error("Erreur lors du calcul de la taille moyenne des fichiers:", error);
+      avgFileSize = null;
     }
   }
 
@@ -85,7 +140,9 @@
 
   // Retourne une couleur hexadécimale en fonction de la complexité.
   function getComplexityColor(complexity: string): string {
-    const level = complexity.split(" • ")[0];
+    // Récupérer le 1er élément après le séparateur " • " pour déterminer le niveau de complexité.
+    const level = complexity.split(" • ")[1];
+    // Changement de couleur qui prévoit différents niveaux de complexité, y compris les anciens niveaux pour compatibilité.
     switch (level) {
       case "Acceptable": return "#4ade80";
       case "Moyenne": return "#fbbf24";
@@ -103,7 +160,7 @@
 
 <main class="page-container">
     <div class="header" transition:fade={{ duration: 300, delay: 100 }}>
-      <h1>Informations</h1>
+      <h1>ℹ️ Informations</h1>
     </div>
 
     <div class="content-wrapper" transition:fade={{ duration: 300, delay: 200 }}>
@@ -122,6 +179,7 @@
 
           <!-- Grille d'informations -->
           <div class="info-grid">
+
             <!-- Taille du projet -->
             <div class="info-card">
               <div class="card-icon">💾</div>
@@ -131,18 +189,22 @@
               </div>
             </div>
 
-            <!-- Complexité -->
-            <div 
-              class="info-card clickable" 
-              role="button" 
-              tabindex="0"
-              onclick={() => showComplexityDetails = !showComplexityDetails}
-              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') showComplexityDetails = !showComplexityDetails }}
-            >
-              <div class="card-icon">⚡</div>
+            <!-- Fichier le plus volumineux -->
+            <div class="info-card">
+              <div class="card-icon">📦</div>
               <div class="card-content">
-                <h3>Complexité {showComplexityDetails ? '▼' : '▶'}</h3>
-                <p class="card-value" style="color: {getComplexityColor(projectInfo.complexity)}">{projectInfo.complexity}</p>
+                <h3>Fichier le plus volumineux</h3>
+                <p class="card-value">{stringifySize(projectInfo.largest_file_size)}</p>
+                <p class="card-subvalue">{projectInfo.largest_file_path}</p>
+              </div>
+            </div>
+
+            <!-- Taille moyenne par fichier -->
+            <div class="info-card">
+              <div class="card-icon">📏</div>
+              <div class="card-content">
+                <h3>Taille moyenne par fichier</h3>
+                <p class="card-value">{avgFileSize !== null ? stringifySize(avgFileSize) : 'N/A'}</p>
               </div>
             </div>
 
@@ -155,15 +217,16 @@
               </div>
             </div>
 
-            <!-- Éditeur détecté -->
+            <!-- Profondeur moyenne -->
             <div class="info-card">
-              <div class="card-icon">🛠️</div>
+              <div class="card-icon">📐</div>
               <div class="card-content">
-                <h3>Éditeur détecté</h3>
-                <p class="card-value editor">{projectInfo.detected_editor}</p>
+                <h3>Profondeur moyenne</h3>
+                <p class="card-value">{projectInfo.average_depth.toFixed(1)} niveau(x)</p>
               </div>
             </div>
 
+            
             <!-- Total fichiers -->
             <div class="info-card">
               <div class="card-icon">📊</div>
@@ -191,7 +254,7 @@
               </div>
             </div>
 
-            <!-- Exécutables -->
+            <!-- Nombre d'exécutables -->
             <div class="info-card">
               <div class="card-icon">⚙️</div>
               <div class="card-content">
@@ -199,7 +262,81 @@
                 <p class="card-value">{projectInfo.executable_count}</p>
               </div>
             </div>
-    
+
+            <!-- Pourcentage fichiers de code -->
+            <div class="info-card">
+              <div class="card-icon">📈</div>
+              <div class="card-content">
+                <h3>% Fichiers de code</h3>
+                <p class="card-value">{projectInfo.code_files_percentage.toFixed(1)}%</p>
+              </div>
+            </div>
+
+            <!-- Complexité logicielle -->
+            <div 
+              class="info-card clickable" 
+              role="button" 
+              tabindex="0"
+              onclick={() => showComplexityDetails = !showComplexityDetails}
+              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') showComplexityDetails = !showComplexityDetails }}
+            >
+              <div class="card-icon">⚡</div>
+              <div class="card-content">
+                <h3>Complexité logicielle {showComplexityDetails ? '▼' : '▶'}</h3>
+                <p class="card-value" style="color: {getComplexityColor(projectInfo.complexity)}">{projectInfo.complexity}</p>
+              </div>
+            </div>
+
+            <!-- Éditeur détecté -->
+            <div class="info-card">
+              <div class="card-icon">🛠️</div>
+              <div class="card-content">
+                <h3>Éditeur détecté</h3>
+                <p class="card-value editor">{projectInfo.detected_editor}</p>
+              </div>
+            </div>
+
+            <!-- Langage dominant -->
+            <div class="info-card">
+              <div class="card-icon">🧠</div>
+              <div class="card-content">
+                <h3>Langage dominant</h3>
+                <p class="card-value">{projectInfo.dominant_language}</p>
+              </div>
+            </div>
+
+            <!-- Extension dominante -->
+            <div class="info-card">
+              <div class="card-icon">🔣</div>
+              <div class="card-content">
+                <h3>Extension dominante</h3>
+                <p class="card-value">.{projectInfo.dominant_extension}</p>
+              </div>
+            </div>
+
+            <!-- Carte Git déroulante -->
+            <div 
+              class="info-card clickable" 
+              role="button" 
+              tabindex="0"
+              onclick={() => showCommitDetails = !showCommitDetails}
+              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') showCommitDetails = !showCommitDetails }}
+            >
+              <div class="card-icon">🐙</div>
+              <div class="card-content">
+                <h3>Git {showCommitDetails ? '▼' : '▶'}</h3>
+                <p class="card-value">
+                  {#if gitHistory}
+                    Actif
+                  {:else if gitHistory === null}
+                    N/A
+                  {:else}
+                    Trouvé
+                  {/if}
+                </p>
+              </div>
+            </div>
+
           </div> <!-- Fin de la grille d'informations -->
 
           <!-- Détails de complexité (dépliable) -->
@@ -244,6 +381,46 @@
               </div>
             </div>
           {/if}
+
+          <!-- Détails de la carte Git (dépliable) -->
+          {#if showCommitDetails}
+            <div class="info-card nested-card">
+              <div class="card-icon">📜</div>
+              <div class="card-content">
+                <h4>Total de commits</h4>
+                <p class="card-value">{gitHistory?.total_commits ?? 'N/A'}</p>
+              </div>
+            </div>
+            <div class="info-card nested-card">
+              <div class="card-icon">⏰</div>
+              <div class="card-content">
+                <h4>Dernier commit</h4>
+                <p class="card-value">{gitHistory?.last_commit_date ?? 'N/A'}</p>
+              </div>
+            </div>
+          {/if}
+
+                    <!-- Détails des commits (dépliable) -->
+          {#if showCommitDetails && gitHistory}
+            <div class="info-card commit-detail-card">
+              <div class="card-icon">📈</div>
+              <div class="card-content">
+                <div class="detail-row">
+                  <span class="detail-label">Fichiers modifiés:</span>
+                  <span class="detail-value">{gitHistory.total_files_changed.toLocaleString()}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Lignes ajoutées:</span>
+                  <span class="detail-value">{gitHistory.total_insertions.toLocaleString()}</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Lignes supprimées:</span>
+                  <span class="detail-value">{gitHistory.total_deletions.toLocaleString()}</span>
+                </div>
+              </div>
+            </div>
+          {/if}
+
         </div> <!-- Fin du contenu -->
       {/if}
     </div>
@@ -466,6 +643,41 @@
     background: rgba(103, 126, 234, 0.1);
     border-radius: 8px;
     border: 1px solid rgba(103, 126, 234, 0.2);
+  }
+
+  .commit-detail-card {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    background: linear-gradient(135deg, rgba(17, 17, 34, 0.95) 0%, rgba(33, 33, 66, 0.95) 100%);
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid rgba(103, 126, 234, 0.3);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    width: 100%;
+  }
+
+  .commit-detail-card .card-icon {
+    font-size: 1.8rem;
+    flex-shrink: 0;
+    margin-top: 3px;
+  }
+
+  .commit-detail-card .card-content {
+    display: grid;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: rgba(103, 126, 234, 0.08);
+    border: 1px solid rgba(103, 126, 234, 0.16);
+    border-radius: 10px;
   }
 
   .detail-label {

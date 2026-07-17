@@ -504,7 +504,7 @@
 <main class="stats-container">
   <!-- En-tête fixe avec le titre de la page -->
   <div class="header" transition:fade={{ duration: 300 }}>
-    <h1>Statistiques</h1>
+    <h1>📈 Statistiques</h1>
   </div>
 
   <!-- Contenu principal avec les graphiques et un effet de transition -->

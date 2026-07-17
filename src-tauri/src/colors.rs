@@ -1,17 +1,25 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
+// Note : Serialize et Deserialize sont des traits de la bibliothèque Serde qui permettent de convertir des structures Rust
+//en formats de données sérialisés (comme JSON) et vice versa.
 #[derive(Serialize, Deserialize, Clone)]
+/*
+    Une structure représentant une palette de couleurs.
+*/
 pub struct ColorPalette {
     pub bg: String,
     pub border: String,
 }
 
-/// Retourne la palette de couleurs complète pour les catégories et langages
+/*
+    Retourne la palette de couleurs complète pour les catégories et langages.
+*/
 pub fn get_color_palette() -> HashMap<String, ColorPalette> {
+    // HashMap est une structure de données qui stocke des paires clé-valeur (clé = catégorie/langage, valeur = palette de couleurs).
     let mut palette = HashMap::new();
 
-    // Langages de programmation
+    // Langages de programmation et couleurs associées
     palette.insert(
         "TypeScript".to_string(),
         ColorPalette {
@@ -243,5 +251,5 @@ pub fn get_color_palette() -> HashMap<String, ColorPalette> {
         },
     );
 
-    palette
+    palette // Retourne la palette de couleurs complète
 }

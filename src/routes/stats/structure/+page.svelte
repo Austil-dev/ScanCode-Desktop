@@ -7,7 +7,7 @@
     name: string; // Nom du fichier ou du dossier
     path: string; // Chemin complet du nœud
     is_dir: boolean; // Indique si le nœud est un dossier ou un fichier
-    size: number; // Ajout de la taille en octets
+    size?: number; // Taille en octets, non garantie par le backend
     children: TreeNode[]; // Enfants du nœud, vide pour les fichiers
   }
 
@@ -15,6 +15,10 @@
   let projectPath = $state("");
   let treeData = $state<TreeNode | null>(null);
   let expandedNodes = $state<Set<string>>(new Set());
+  let selectedFile = $state<TreeNode | null>(null);
+  let selectedFileContent = $state("");
+  let selectedFileLoading = $state(false);
+  let selectedFileError = $state("");
 
   // Effet pour charger la structure du projet lorsque le composant est monté ou lorsque le chemin du projet change
   $effect(() => {
@@ -70,6 +74,47 @@
     return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + " " + sizes[i];
   }
 
+  // Sélectionne un nœud dans l'arborescence
+  function selectNode(node: TreeNode) {
+    if (node.is_dir) {
+      // cas de sélection d'un dossier, on l'ouvre ou le ferme
+      toggleNode(node.path); 
+      selectedFile = null;
+      selectedFileContent = "";
+      selectedFileError = "";
+    } else {
+      // cas de sélection d'un fichier, on charge son contenu
+      selectedFile = node;
+      loadSelectedFile(node);
+    }
+  }
+
+  async function loadSelectedFile(node: TreeNode) {
+    // Réinitialisation de l'état avant de charger le contenu du fichier
+    selectedFileLoading = true;
+    selectedFileError = "";
+    selectedFileContent = "";
+
+    // Construction du chemin complet du fichier à partir du chemin du projet et du chemin relatif du nœud
+    const filePath = `${projectPath.replace(/\\/g, "/")}${projectPath.endsWith("/") ? "" : "/"}${node.path.replace(/\\/g, "/")}`;
+
+    // Appel de la fonction Rust pour lire le contenu du fichier sélectionné
+    try {
+      selectedFileContent = await invoke<string>("read_file_content", { path: filePath });
+    } catch (error) {
+      selectedFileError = `Impossible de charger le fichier : ${error}`;
+      console.error("Erreur read_file_content:", error);
+    } finally {
+      selectedFileLoading = false;
+    }
+  }
+
+  function getFileTypeLabel(node: TreeNode) {
+    if (node.is_dir) return "Dossier";
+    const ext = node.name.split(".").pop()?.toLowerCase();
+    return ext ? `Fichier .${ext}` : "Fichier";
+  }
+
   // Retourne une icône emoji basée sur l'extension du fichier ou le type de dossier
   function getFileIcon(node: TreeNode): string {
     if (node.is_dir) return "📁";
@@ -89,7 +134,7 @@
       'c': '©️', 'cpp': '©️', 'h': '©️',
       'exe': '⚙️', 'dll': '⚙️', 'so': '⚙️'
     };
-    
+
     return iconMap[ext] || "📄"; // Icône par défaut pour les fichiers inconnus
   }
 </script>
@@ -102,11 +147,12 @@
   <div class="tree-node" style="padding-left: {level * 20}px">
     <!-- Contenu du nœud avec gestion de l'expansion -->
     <div 
-      class="node-content" 
-      onclick={() => hasChildren && toggleNode(node.path)}
+      class="node-content"
+      class:selected={selectedFile?.path === node.path}
+      onclick={() => selectNode(node)}
       role="button"
       tabindex="0"
-      onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && hasChildren && toggleNode(node.path)}
+      onkeydown={(e) => (e.key === 'Enter' || e.key === ' ') && selectNode(node)}
     >
       <div class="node-left">
         {#if hasChildren}
@@ -137,7 +183,7 @@
 <main class="page-container">
   <!-- En-tête de la page -->
   <div class="header" transition:fade={{ duration: 300 }}>
-    <h1>Structure</h1>
+    <h1>🗂️ Structure</h1>
   </div>
 
   <!-- Contenu principal de la page -->
@@ -166,20 +212,51 @@
           </div>
         </div>
 
-        <!-- Contenu de l'arborescence -->
-        <div class="tree-content">.
-          <!-- Vérification de la présence d'enfants dans la structure du projet -->
-          {#if treeData.children && treeData.children.length > 0}
-          <!-- Rendu récursif des enfants -->
-            {#each treeData.children as child}
-              <!-- Rendu récursif d'un enfant -->
-              {@render TreeNode({ node: child, level: 0, expandedNodes, toggleNode, getFileIcon, formatSize })}
-            {/each}
-          <!-- Affichage d'un message si aucun fichier n'est trouvé dans le projet -->
-          {:else}
-            <!-- Message indiquant qu'aucun fichier n'a été trouvé -->
-            <div class="empty-message">Aucun fichier trouvé</div>
-          {/if}
+        <div class="structure-layout">
+          <div class="tree-panel">
+            <div class="tree-content">
+              <!-- Vérification de la présence d'enfants dans la structure du projet -->
+              {#if treeData.children && treeData.children.length > 0}
+                <!-- Rendu récursif des enfants -->
+                {#each treeData.children as child}
+                  {@render TreeNode({ node: child, level: 0, expandedNodes, toggleNode, getFileIcon, formatSize })}
+                {/each}
+              {:else}
+                <!-- Message indiquant qu'aucun fichier n'a été trouvé -->
+                <div class="empty-message">Aucun fichier trouvé</div>
+              {/if}
+            </div>
+          </div>
+
+          <aside class="detail-panel">
+            {#if selectedFile}
+              <div class="file-detail-header">
+                <div>
+                  <h3>{selectedFile.name}</h3>
+                  <p class="file-path">{selectedFile.path}</p>
+                </div>
+                <div class="file-meta">
+                  <span>{getFileTypeLabel(selectedFile)}</span>
+                  <span>{selectedFile.size ? formatSize(selectedFile.size) : "Taille non disponible"}</span>
+                </div>
+              </div>
+
+              <div class="file-detail-body">
+                {#if selectedFileLoading}
+                  <div class="loading-message">Chargement du contenu…</div>
+                {:else if selectedFileError}
+                  <div class="error-message">{selectedFileError}</div>
+                {:else}
+                  <pre class="file-content">{selectedFileContent}</pre>
+                {/if}
+              </div>
+            {:else}
+              <div class="detail-placeholder">
+                <h3>Sélectionnez un fichier</h3>
+                <p>Le contenu s'affiche ici lorsque vous cliquez sur un fichier.</p>
+              </div>
+            {/if}
+          </aside>
         </div>
       </div>
     {/if}
@@ -317,6 +394,95 @@
     padding: 20px;
     max-height: calc(100vh - 300px);
     overflow-y: auto;
+  }
+
+  .structure-layout {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) minmax(400px, 1fr);
+    gap: 20px;
+  }
+
+  .tree-panel {
+    min-width: 0;
+  }
+
+  .detail-panel {
+    padding: 20px;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    background: rgba(17, 17, 34, 0.92);
+    border: 1px solid rgba(103, 126, 234, 0.18);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  .file-detail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(103, 126, 234, 0.12);
+  }
+
+  .file-detail-header h3 {
+    font-size: 1.2rem;
+    color: #ffffff;
+    margin-bottom: 8px;
+  }
+
+  .file-path {
+    color: #a0a0a0;
+    font-family: monospace;
+    font-size: 0.9rem;
+    word-break: break-all;
+  }
+
+  .file-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    color: #a0a0a0;
+    font-size: 0.9rem;
+  }
+
+  .file-detail-body {
+    flex: 1;
+    overflow: hidden;
+  }
+
+  .file-content {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background: rgba(10, 12, 27, 0.88);
+    color: #d7dae0;
+    padding: 18px;
+    border-radius: 14px;
+    border: 1px solid rgba(103, 126, 234, 0.16);
+  }
+
+  .detail-placeholder {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    color: #a8b4db;
+  }
+
+  .loading-message {
+    color: #a0a0a0;
+  }
+
+  .node-content.selected {
+    background: rgba(103, 126, 234, 0.22);
   }
 
   .tree-node {
