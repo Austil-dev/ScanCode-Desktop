@@ -9,7 +9,7 @@ Ce logiciel utilise la stack Tauri (Sveltekit + Rust).
 
 Pour le frontend, TypeScript permet le typage et le contrôle du code, et svelte permet de naviguer dans un projet avec une interface moderne et réactive. Pour le backend, Rust permet d'accéder directement aux données techniques du projet en local-first. 
 
-# Frontend
+# 💻 Frontend
 ## src/routes/+page.svelte
 La page de présentation principale qui contient l'historique de navigation des projets, et des informations générales sur le projet ScanCode Desktop.
 
@@ -41,7 +41,7 @@ Le fichier structure contient l'arborescence du projet en clair avec le nom, l'e
 
 Cette arborescence a été organisée pour visualiser facilement le nom, l'extension et surtout la taille de chaque dossier et fichier. Certains caractères spéciaux, et les symboles ne sont actuellement pas supportés pour la lecture.
 
-# Backend
+# ⚙️ Backend
 
 ## src-tauri/src/color.rs
 Color.rs contient le code couleur associé aux mots-clés des langages de programmation (ex : JavaScript) et à certains types de fichiers de l'explorateur de fichier (ex: Documents). pour une meilleure lisibilité du projet.
@@ -60,7 +60,7 @@ Ce fichier contient des commandes Tauri peremettant de calculer et évaluer des 
 ## src-tauri/src/main.rs
 Un simple appel de la fonction run() de lib.rs pour lancer le code Rust.
 
-# Utilisation du projet
+# ▶️ Lancement du projet
 Selon l'IDE et la configuration utilisées, le projet pourra être lancé différemment, mais si vous utiliser VS Code et que vous avez déjà installé et configuré Tauri, la commande est la suivante : 
 npm run tauri dev
 
