@@ -4,10 +4,36 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-white?style=plastic&logo=typescript&logoColor=blue&labelColor=white&color=blue)
 ![Rust](https://img.shields.io/badge/Rust-white?style=plastic&logo=Rust&logoColor=black&labelColor=white&color=black)
 
-ScanCode Desktop est une application de bureau qui permet d'obtenir un tableau de bord rapide avec des données détaillées et techniques sur un projet de développeur, supportant un grand nombre de langages de programmation.
-Ce logiciel utilise la stack Tauri (Sveltekit + Rust). 
+ScanCode Desktop est une applicationde bureau permettant d'analyser rapidement la structure,
+les fichiers, les technologies et différentes caractéristiques
+techniques d'un projet logiciel.
 
-Pour le frontend, TypeScript permet le typage et le contrôle du code, et svelte permet de naviguer dans un projet avec une interface moderne et réactive. Pour le backend, Rust permet d'accéder directement aux données techniques du projet en local-first. 
+Pour le frontend, TypeScript permet le typage et le contrôle du code, et svelte permet de naviguer dans un projet avec une interface moderne et réactive. Pour le backend, Rust permet d'accéder directement aux données techniques du projet sur le poste de l'utilisateur. 
+
+## Fonctionnalités
+
+- Analyse de la structure du projet
+- Statistiques sur les fichiers et langages
+- Informations techniques
+- Historique local et Git
+- Exploration de l'arborescence
+- Traitement local des données
+
+## Technologies
+
+Tauri · Rust · SvelteKit · TypeScript
+
+## Architecture
+
+Frontend
+SvelteKit + TypeScript
+        ↓
+      Tauri
+        ↓
+Backend
+Rust
+        ↓
+Fichiers locaux / Git
 
 # 💻 Frontend
 ## 📄 src/routes/+page.svelte
