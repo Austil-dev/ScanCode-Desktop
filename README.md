@@ -178,7 +178,7 @@ npm install
 
 ### Lancement du projet
 
-Selon l'IDE et la configuration utilisées, le projet pourra être lancé différemment, mais si vous utiliser VS Code et que vous avez déjà installé et configuré Tauri, la commande est la suivante.
+Selon l'IDE et la configuration utilisés, le projet pourra être lancé différemment, mais si vous utilisez VS Code et que vous avez déjà installé et configuré Tauri, la commande est la suivante.
 
 Pour lancer l'application dans un terminal VS Code, en mode développement :
 
