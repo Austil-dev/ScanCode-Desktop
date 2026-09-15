@@ -25,12 +25,12 @@ Tauri · Rust · SvelteKit · TypeScript
 
 Frontend
 SvelteKit + TypeScript
-        ↓
+        =>
       Tauri
-        ↓
+        =>
 Backend
 Rust
-        ↓
+        =>
 Fichiers locaux / Git
 
 # 💻 Frontend
