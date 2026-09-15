@@ -92,7 +92,7 @@ Lorsqu'un projet est ouvert dans ScanCode Desktop, l'application analyse son con
 
 Les résultats sont ensuite répartis dans quatre sections principales.
 
-### Statistiques
+### 📈 Statistiques
 
 Cette section présente différentes représentations graphiques permettant notamment d'observer :
 
@@ -102,7 +102,7 @@ Cette section présente différentes représentations graphiques permettant nota
 - l'évolution des modifications en fonction de la taille des fichiers et de la date ;
 - les fichiers les plus modifiés.
 
-### Informations
+### ℹ️ Informations
 
 Cette section présente différentes caractéristiques techniques du projet, notamment :
 
@@ -122,7 +122,7 @@ Cette section présente différentes caractéristiques techniques du projet, not
 - extension dominante ;
 - informations Git disponibles.
 
-### Données du projet
+### 📊 Données du projet
 
 Cette section permet de consulter les données historiques disponibles.
 
@@ -130,7 +130,7 @@ Lorsqu'un dépôt Git est présent, les informations issues de Git peuvent être
 
 L'application dispose également d'un historique local basé sur l'évolution de la taille des fichiers.
 
-### Structure
+### 🗂️ Structure
 
 Cette section permet d'explorer l'arborescence du projet.
 
