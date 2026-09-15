@@ -4,11 +4,9 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-white?style=plastic&logo=typescript&logoColor=blue&labelColor=white&color=blue)
 ![Rust](https://img.shields.io/badge/Rust-white?style=plastic&logo=Rust&logoColor=black&labelColor=white&color=black)
 
-ScanCode Desktop est une applicationde bureau permettant d'analyser rapidement la structure,
-les fichiers, les technologies et différentes caractéristiques
-techniques d'un projet logiciel.
+ScanCode Desktop est une application de bureau permettant d'analyser rapidement la structure, les fichiers, les technologies et différentes caractéristiques techniques d'un projet logiciel.
 
-Pour le frontend, TypeScript permet le typage et le contrôle du code, et svelte permet de naviguer dans un projet avec une interface moderne et réactive. Pour le backend, Rust permet d'accéder directement aux données techniques du projet sur le poste de l'utilisateur. 
+Pour le frontend, TypeScript permet le typage et le contrôle du code, et SvelteKit permet de naviguer dans un projet avec une interface moderne et réactive. Pour le backend, Rust permet d'accéder directement aux données techniques du projet sur le poste de l'utilisateur. 
 
 ## Fonctionnalités
 
